@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 01: Xây dựng Blockchain Cơ bản với Python</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .container {
+            max-width: 1024px;
+        }
+        h1, h2, h3 {
+            font-weight: 700;
+        }
+        .code-block {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900">Lab 01: NT547</h1>
+            <p class="text-xl text-gray-600 mt-2">Xây dựng Blockchain Cơ bản với Python</p>
+        </header>
+
+        <div class="card">
+            <h2 class="text-2xl font-bold border-b pb-2 mb-4">1. Mục tiêu và Tổng quan</h2>
+            <p class="mb-2"><strong>Mục tiêu:</strong> Bài thực hành này giúp sinh viên hiểu sâu sắc và tự tay triển khai các khái niệm nền tảng của công nghệ blockchain: Khối (Block), Chuỗi (Chain), Giao dịch (Transaction), Hàm băm (Hash Function), và đặc biệt là cơ chế đồng thuận Bằng chứng Công việc (Proof of Work - PoW). Mục tiêu cuối cùng là xây dựng một mô hình blockchain đơn giản nhưng đầy đủ chức năng cốt lõi, có thể tương tác qua API.</p>
+            <p><strong>Tổng quan:</strong> Chúng ta sẽ sử dụng Python và thư viện Flask để xây dựng một blockchain từ đầu. Python cho phép tập trung vào logic, trong khi Flask giúp tạo ra các điểm cuối (endpoints) API để mô phỏng cách các nút (nodes) trong một mạng lưới phi tập trung giao tiếp với nhau. Phiên bản nâng cao này sẽ đi sâu hơn vào các tính năng thực tế như xác thực giao dịch và cơ chế thưởng linh hoạt.</p>
+        </div>
+
+        <div class="card">
+            <h2 class="text-2xl font-bold border-b pb-2 mb-4">2. Kiến thức Nền tảng</h2>
+            <p class="mb-4">Blockchain là một chuỗi các khối (blocks) được liên kết với nhau bằng mã hóa. Mỗi khối chứa một danh sách các giao dịch, một dấu thời gian, và quan trọng nhất là mã băm (hash) của khối trước đó. Sự liên kết này tạo ra một chuỗi bất biến, nơi việc thay đổi một khối sẽ làm thay đổi tất cả các khối theo sau nó, giúp đảm bảo tính toàn vẹn dữ liệu.</p>
+                        <ul class="list-disc list-inside space-y-2">
+                <li><strong>Hàm băm (Hash Function):</strong> Thuật toán (ví dụ: SHA-256) biến đổi dữ liệu đầu vào thành một chuỗi ký tự có độ dài cố định. Nó có tính tất định, hiệu quả, và kháng tiền ảnh.</li>
+                <li><strong>Khối (Block):</strong> Đơn vị cơ bản của blockchain, chứa dữ liệu giao dịch, mã băm của khối trước, và một giá trị đặc biệt gọi là Nonce.</li>
+                <li><strong>Bằng chứng Công việc (Proof of Work - PoW):</strong> Một cơ chế đồng thuận yêu cầu các "thợ đào" (miners) giải một bài toán tính toán phức tạp để có quyền thêm khối mới vào chuỗi. Điều này giúp bảo vệ mạng lưới khỏi các cuộc tấn công.</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2 class="text-2xl font-bold border-b pb-2 mb-4">3. Yêu cầu Môi trường</h2>
+            <ul class="list-disc list-inside space-y-2">
+                <li><strong>Python 3.7+</strong> đã được cài đặt.</li>
+                <li><strong>Thư viện Flask và Requests:</strong> Cài đặt bằng lệnh sau trong terminal:
+                    <div class="code-block mt-2 text-sm">
+                        <pre>pip install Flask requests</pre>
+                    </div>
+                </li>
+                <li><strong>Trình soạn thảo mã nguồn:</strong> VS Code, PyCharm, hoặc bất kỳ trình soạn thảo nào em yêu thích.</li>
+                <li><strong>Công cụ kiểm tra API:</strong> Postman, Insomnia, hoặc sử dụng `curl` từ dòng lệnh.</li>
+            </ul>
+        </div>
+        
+        <div class="card">
+            <h2 class="text-2xl font-bold border-b pb-2 mb-4">4. Mã nguồn (gợi ý) </h2>
+            <p class="mb-4">Dưới đây là toàn bộ mã nguồn cho blockchain (gợi ý) trong một file duy nhất `blockchain.py`. Các giải thích chi tiết đã được thêm vào dưới dạng bình luận (comments) ngay trong code để các em tiện theo dõi. Nếu có lỗi xảy ra, các em tự FIX. Sinh viên có thể code thêm tính năng nếu muốn.</p>
+            <div class="code-block">
+<pre><code class="language-python">
+# -*- coding: utf-8 -*-
+import hashlib
+import json
+from time import time
+from urllib.parse import urlparse
+from uuid import uuid4
+
+import requests
+from flask import Flask, jsonify, request
+
+class Blockchain:
+    def __init__(self):
+        """
+        Hàm khởi tạo của lớp Blockchain.
+        """
+        self.current_transactions = []
+        self.chain = []
+        self.nodes = set()
+
+        # Tạo khối nguyên thủy (genesis block)
+        self.new_block(previous_hash='1', proof=100)
+
+    def register_node(self, address):
+        """
+        Thêm một node mới vào danh sách các node.
+        :param address: Địa chỉ của node. Ví dụ: 'http://192.168.0.5:5000'
+        """
+        parsed_url = urlparse(address)
+        if parsed_url.netloc:
+            self.nodes.add(parsed_url.netloc)
+        elif parsed_url.path:
+            # Chấp nhận URL dạng '192.168.0.5:5000'.
+            self.nodes.add(parsed_url.path)
+        else:
+            raise ValueError('URL không hợp lệ')
+
+    def valid_chain(self, chain):
+        """
+        Kiểm tra xem một chuỗi blockchain có hợp lệ hay không.
+        :param chain: Một chuỗi blockchain
+        :return: True nếu hợp lệ, False nếu không.
+        """
+        last_block = chain[0]
+        current_index = 1
+
+        while current_index < len(chain):
+            block = chain[current_index]
+            print(f'{last_block}')
+            print(f'{block}')
+            print("\n-----------\n")
+            # Kiểm tra mã băm của khối có đúng không
+            if block['previous_hash'] != self.hash(last_block):
+                return False
+
+            # Kiểm tra bằng chứng công việc có đúng không
+            if not self.valid_proof(last_block['proof'], block['proof'], block['previous_hash']):
+                return False
+
+            last_block = block
+            current_index += 1
+
+        return True
+
+    def resolve_conflicts(self):
+        """
+        Đây là thuật toán đồng thuận, nó giải quyết các xung đột
+        bằng cách thay thế chuỗi của chúng ta bằng chuỗi dài nhất trong mạng.
+        :return: True nếu chuỗi của chúng ta bị thay thế, False nếu không.
+        """
+        neighbours = self.nodes
+        new_chain = None
+
+        # Chúng ta chỉ tìm kiếm các chuỗi dài hơn chuỗi của mình
+        max_length = len(self.chain)
+
+        # Lấy và xác minh các chuỗi từ tất cả các node trong mạng
+        for node in neighbours:
+            response = requests.get(f'http://{node}/chain')
+
+            if response.status_code == 200:
+                length = response.json()['length']
+                chain = response.json()['chain']
+
+                # Kiểm tra xem độ dài có lớn hơn và chuỗi có hợp lệ không
+                if length > max_length and self.valid_chain(chain):
+                    max_length = length
+                    new_chain = chain
+
+        # Thay thế chuỗi của chúng ta nếu chúng ta phát hiện ra một chuỗi mới, dài hơn và hợp lệ
+        if new_chain:
+            self.chain = new_chain
+            return True
+
+        return False
+
+    def new_block(self, proof, previous_hash):
+        """
+        Tạo một khối mới trong Blockchain.
+        :param proof: Bằng chứng được đưa ra bởi thuật toán Proof of Work
+        :param previous_hash: Mã băm của khối trước đó
+        :return: Khối mới
+        """
+        block = {
+            'index': len(self.chain) + 1,
+            'timestamp': time(),
+            'transactions': self.current_transactions,
+            'proof': proof,
+            'previous_hash': previous_hash or self.hash(self.chain[-1]),
+        }
+
+        # Reset danh sách giao dịch hiện tại
+        self.current_transactions = []
+
+        self.chain.append(block)
+        return block
+
+    def new_transaction(self, sender, recipient, amount):
+        """
+        Tạo một giao dịch mới để đi vào khối được đào tiếp theo.
+        :param sender: Địa chỉ của người gửi
+        :param recipient: Địa chỉ của người nhận
+        :param amount: Số lượng
+        :return: Chỉ số của khối sẽ chứa giao dịch này
+        """
+        self.current_transactions.append({
+            'sender': sender,
+            'recipient': recipient,
+            'amount': amount,
+        })
+
+        return self.last_block['index'] + 1
+
+    @property
+    def last_block(self):
+        return self.chain[-1]
+
+    @staticmethod
+    def hash(block):
+        """
+        Tạo mã băm SHA-256 của một khối.
+        :param block: Khối
+        """
+        # Chúng ta phải đảm bảo rằng Dictionary được sắp xếp, nếu không chúng ta sẽ có các mã băm không nhất quán
+        block_string = json.dumps(block, sort_keys=True).encode()
+        return hashlib.sha256(block_string).hexdigest()
+
+    def proof_of_work(self, last_block):
+        """
+        Thuật toán Proof of Work đơn giản:
+         - Tìm một số p' sao cho hash(pp') có 4 số 0 ở đầu
+         - p là proof của khối trước, p' là proof mới
+        :param last_block: Khối cuối cùng
+        :return: Bằng chứng công việc (proof)
+        """
+        last_proof = last_block['proof']
+        last_hash = self.hash(last_block)
+
+        proof = 0
+        while self.valid_proof(last_proof, proof, last_hash) is False:
+            proof += 1
+
+        return proof
+
+    @staticmethod
+    def valid_proof(last_proof, proof, last_hash):
+        """
+        Xác thực bằng chứng: hash(last_proof, proof, last_hash) có chứa 4 số 0 ở đầu không?
+        :param last_proof: Proof trước đó
+        :param proof: Proof hiện tại
+        :param last_hash: Mã băm của khối trước đó
+        :return: True nếu đúng, False nếu sai.
+        """
+        guess = f'{last_proof}{proof}{last_hash}'.encode()
+        guess_hash = hashlib.sha256(guess).hexdigest()
+        # Thay đổi độ khó bằng cách tăng số lượng số '0' ở đầu
+        return guess_hash[:4] == "0000"
+
+
+# Khởi tạo Node
+app = Flask(__name__)
+
+# Tạo một địa chỉ duy nhất toàn cầu cho node này
+node_identifier = str(uuid4()).replace('-', '')
+
+# Khởi tạo Blockchain
+blockchain = Blockchain()
+
+
+@app.route('/mine', methods=['GET'])
+def mine():
+    # Chạy thuật toán PoW để lấy proof tiếp theo...
+    last_block = blockchain.last_block
+    proof = blockchain.proof_of_work(last_block)
+
+    # Chúng ta phải nhận phần thưởng cho việc tìm ra proof.
+    # Người gửi là "0" để biểu thị rằng node này đã đào một coin mới.
+    blockchain.new_transaction(
+        sender="0",
+        recipient=node_identifier,
+        amount=1,
+    )
+
+    # Tạo khối mới bằng cách thêm nó vào chuỗi
+    previous_hash = blockchain.hash(last_block)
+    block = blockchain.new_block(proof, previous_hash)
+
+    response = {
+        'message': "Một khối mới đã được tạo (mined)",
+        'index': block['index'],
+        'transactions': block['transactions'],
+        'proof': block['proof'],
+        'previous_hash': block['previous_hash'],
+    }
+    return jsonify(response), 200
+
+
+@app.route('/transactions/new', methods=['POST'])
+def new_transaction():
+    values = request.get_json()
+
+    # Kiểm tra các trường bắt buộc có trong dữ liệu POST không
+    required = ['sender', 'recipient', 'amount']
+    if not all(k in values for k in required):
+        return 'Thiếu giá trị', 400
+
+    # Tạo một giao dịch mới
+    index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
+
+    response = {'message': f'Giao dịch sẽ được thêm vào khối {index}'}
+    return jsonify(response), 201
+
+
+@app.route('/chain', methods=['GET'])
+def full_chain():
+    response = {
+        'chain': blockchain.chain,
+        'length': len(blockchain.chain),
+    }
+    return jsonify(response), 200
+
+
+@app.route('/nodes/register', methods=['POST'])
+def register_nodes():
+    values = request.get_json()
+
+    nodes = values.get('nodes')
+    if nodes is None:
+        return "Lỗi: Vui lòng cung cấp một danh sách node hợp lệ", 400
+
+    for node in nodes:
+        blockchain.register_node(node)
+
+    response = {
+        'message': 'Các node mới đã được thêm vào',
+        'total_nodes': list(blockchain.nodes),
+    }
+    return jsonify(response), 201
+
+
+@app.route('/nodes/resolve', methods=['GET'])
+def consensus():
+    replaced = blockchain.resolve_conflicts()
+
+    if replaced:
+        response = {
+            'message': 'Chuỗi của chúng ta đã được thay thế',
+            'new_chain': blockchain.chain
+        }
+    else:
+        response = {
+            'message': 'Chuỗi của chúng ta là chính xác',
+            'chain': blockchain.chain
+        }
+
+    return jsonify(response), 200
+
+
+if __name__ == '__main__':
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser()
+    parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on')
+    args = parser.parse_args()
+    port = args.port
+
+    app.run(host='0.0.0.0', port=port)
+</code></pre>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="text-2xl font-bold border-b pb-2 mb-4">5. Yêu cầu và Thang điểm (Tổng: 10 điểm)</h2>
+            <p class="mb-6">Hoàn thành các yêu cầu sau theo thứ tự. Mỗi yêu cầu sẽ xây dựng dựa trên yêu cầu trước đó. Nộp lại file mã nguồn `blockchain.py` hoàn chỉnh và một file báo cáo chi tiết.</p>
+
+            <div class="space-y-6">
+                <!-- Yêu cầu 1 -->
+                <div>
+                    <h3 class="text-xl font-semibold">Yêu cầu 1: Thay đổi Độ khó của Proof of Work (2.0 điểm)</h3>
+                    <p class="mt-2 text-gray-700"><strong>Mô tả:</strong> Trong phương thức `valid_proof`, độ khó hiện tại được quy định bởi việc kiểm tra 4 chữ số 0 ở đầu mã băm (`guess_hash[:4] == "0000"`). Hãy tăng độ khó bằng cách yêu cầu mã băm phải bắt đầu bằng 5 chữ số 0.</p>
+                    <p class="mt-2 text-gray-700"><strong>Nhiệm vụ:</strong></p>
+                    <ul class="list-disc list-inside mt-2 pl-4">
+                        <li>Sửa đổi dòng code kiểm tra trong `valid_proof` thành `guess_hash[:5] == "00000"`.</li>
+                        <li>Chạy lại server và dùng Postman/curl để đào một vài khối.</li>
+                        <li><strong>Trong báo cáo:</strong> Ghi lại và so sánh thời gian đào khối trước và sau khi thay đổi. Giải thích tại sao việc tăng thêm một chữ số 0 lại làm tăng đáng kể thời gian tính toán.</li>
+                    </ul>
+                </div>
+
+                <!-- Yêu cầu 2 -->
+                <div>
+                    <h3 class="text-xl font-semibold">Yêu cầu 2: Phần thưởng Đào khối Động (2.5 điểm)</h3>
+                    <p class="mt-2 text-gray-700"><strong>Mô tả:</strong> Phần thưởng cho thợ đào hiện đang được cố định là 1 coin cho mỗi khối. Trong thực tế (như Bitcoin), phần thưởng này sẽ giảm đi theo thời gian (halving). Hãy triển khai một cơ chế phần thưởng động.</p>
+                    <p class="mt-2 text-gray-700"><strong>Nhiệm vụ:</strong></p>
+                    <ul class="list-disc list-inside mt-2 pl-4">
+                        <li>Tạo một phương thức mới trong lớp `Blockchain`, ví dụ `get_mining_reward()`.</li>
+                        <li>Phương thức này sẽ tính toán phần thưởng dựa trên chiều dài hiện tại của chuỗi (`len(self.chain)`). Ví dụ: Phần thưởng là 1 coin cho 10 khối đầu tiên, 0.5 coin cho 10 khối tiếp theo, 0.25 cho 10 khối sau đó, v.v.</li>
+                        <li>Cập nhật endpoint `/mine` để gọi phương thức `get_mining_reward()` và sử dụng giá trị trả về làm `amount` trong giao dịch thưởng.</li>
+                        <li><strong>Trong báo cáo:</strong> Giải thích logic tính toán phần thưởng của em. Chụp ảnh màn hình kết quả API cho thấy phần thưởng thay đổi sau khi vượt qua một mốc nhất định (ví dụ: sau khối thứ 10).</li>
+                    </ul>
+                </div>
+
+                <!-- Yêu cầu 3 -->
+                <div>
+                    <h3 class="text-xl font-semibold">Yêu cầu 3: Xác thực Giao dịch Cơ bản (3.0 điểm)</h3>
+                    <p class="mt-2 text-gray-700"><strong>Mô tả:</strong> Hiện tại, hệ thống cho phép bất kỳ ai gửi một số lượng coin bất kỳ mà không kiểm tra xem họ có đủ số dư hay không. Hãy thêm logic để xác thực giao dịch.</p>
+                    <p class="mt-2 text-gray-700"><strong>Nhiệm vụ:</strong></p>
+                    <ul class="list-disc list-inside mt-2 pl-4">
+                        <li>Tạo một phương thức mới `get_balance(address)` để tính toán số dư của một địa chỉ. Phương thức này phải duyệt qua tất cả các khối và các giao dịch trong chuỗi để tính tổng số coin nhận và gửi của địa chỉ đó. Lưu ý: các giao dịch thưởng (sender="0") là coin được tạo ra.</li>
+                        <li>Trong phương thức `new_transaction`, trước khi thêm giao dịch vào `self.current_transactions`, hãy gọi `get_balance()` để kiểm tra số dư của `sender`.</li>
+                        <li>Nếu số dư không đủ, giao dịch không được thêm vào và endpoint `/transactions/new` nên trả về một lỗi (ví dụ: HTTP 400 Bad Request với thông báo "Số dư không đủ").</li>
+                         <li><strong>Trong báo cáo:</strong> Giải thích cách em triển khai `get_balance`. Chụp ảnh màn hình các trường hợp: một giao dịch thành công, và một giao dịch thất bại do không đủ số dư.</li>
+                    </ul>
+                </div>
+                
+                <!-- Yêu cầu 4 -->
+                 <div>
+                    <h3 class="text-xl font-semibold">Yêu cầu 4: Triển khai Cơ chế Đồng thuận (2.5 điểm)</h3>
+                    <p class="mt-2 text-gray-700"><strong>Mô tả:</strong> Một blockchain phi tập trung cần một cách để giải quyết xung đột khi các node khác nhau có các phiên bản chuỗi khác nhau. Cơ chế đơn giản nhất là "chuỗi dài nhất sẽ thắng". Mã nguồn cung cấp đã có sẵn các phương thức `register_node`, `valid_chain` và `resolve_conflicts`, nhiệm vụ của em là hiểu và sử dụng chúng.</p>
+                    <p class="mt-2 text-gray-700"><strong>Nhiệm vụ:</strong></p>
+                    <ul class="list-disc list-inside mt-2 pl-4">
+                        <li>Chạy hai hoặc nhiều node của blockchain trên các cổng khác nhau (ví dụ: `python blockchain.py -p 5000` và `python blockchain.py -p 5001`).</li>
+                        <li>Dùng endpoint `/nodes/register` để đăng ký node này với node kia và ngược lại.</li>
+                        <li>Trên node 1, đào một vài khối. Trên node 2, đào nhiều khối hơn.</li>
+                        <li>Gọi endpoint `/nodes/resolve` trên node 1. Quan sát cách chuỗi của node 1 được thay thế bằng chuỗi dài hơn từ node 2.</li>
+                        <li><strong>Trong báo cáo:</strong> Mô tả chi tiết các bước em đã thực hiện để mô phỏng và giải quyết xung đột. Chụp ảnh màn hình API cho thấy chuỗi của node 1 trước và sau khi gọi `/nodes/resolve`. Giải thích tầm quan trọng của cơ chế đồng thuận.</li>
+                    </ul>
+                </div>
+
+                <!-- Yêu cầu 5 - Nâng cao -->
+                <div class="border-t-2 border-dashed border-indigo-400 pt-6">
+                    <h3 class="text-xl font-semibold text-indigo-700">Yêu cầu 5: Ký và Xác thực Giao dịch bằng Chữ ký số (Nâng cao - Extra 2.0 điểm)</h3>
+                    <p class="mt-2 text-gray-700"><strong>Mô tả:</strong> Đây là yêu cầu không bắt buộc để đạt điểm tối đa (10), nhưng sẽ giúp em có thêm điểm thưởng. Để đảm bảo tính xác thực, mỗi giao dịch cần được ký bởi khóa riêng (private key) của người gửi. Các node khác sau đó có thể xác minh giao dịch bằng khóa công khai (public key) của người gửi.</p>
+                    <p class="mt-2 text-gray-700"><strong>Nhiệm vụ:</strong></p>
+                    <ul class="list-disc list-inside mt-2 pl-4">
+                        <li>Sử dụng một thư viện mật mã như `pycryptodome` (`pip install pycryptodome`).</li>
+                        <li>Tạo một endpoint mới, ví dụ `/wallet/new`, để tạo một cặp khóa public/private mới.</li>
+                        <li>Sửa đổi endpoint `/transactions/new` để yêu cầu người dùng cung cấp `sender_public_key` và `signature` cùng với các thông tin giao dịch.</li>
+                        <li>Viết một phương thức `verify_signature` để kiểm tra xem chữ ký có hợp lệ với giao dịch và khóa công khai của người gửi hay không.</li>
+                        <li>Chỉ thêm giao dịch vào danh sách nếu chữ ký hợp lệ.</li>
+                        <li><strong>Trong báo cáo:</strong> Trình bày cách em tích hợp hệ thống chữ ký số. Giải thích vai trò của khóa công khai và khóa riêng. Cung cấp ví dụ về một yêu cầu API hoàn chỉnh (bao gồm cả chữ ký) để tạo giao dịch.</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="text-2xl font-bold border-b pb-2 mb-4">6. Yêu cầu Nộp Báo cáo</h2>
+            <p>Sinh viên cần CÁ NHÂN nộp một file nén ZIP tên: Lab01_NT547_MSSV.zip, chứa:</p>
+            <ul class="list-disc list-inside mt-2 space-y-2">
+                <li>File mã nguồn <strong>`blockchain.py`</strong> đã hoàn thiện tất cả các yêu cầu.</li>
+                <li>File báo cáo <strong>`Lab01_NT547_MSSV.pdf`</strong>, trong đó:
+                    <ul class="list-circle list-inside mt-2 ml-4">
+                        <li>Trình bày và giải thích chi tiết các đoạn code bạn đã sửa đổi hoặc thêm mới cho từng yêu cầu.</li>
+                        <li>Trả lời các câu hỏi và cung cấp các ảnh chụp màn hình được yêu cầu trong mỗi phần.</li>
+                        <li>Mô tả các bước đã thực hiện để chạy và kiểm tra ứng dụng.</li>
+                    </ul>
+                </li>
+            </ul>
+             <p class="mt-4 text-sm text-red-600 font-semibold">Lưu ý: Mọi trường hợp sao chép bài làm sẽ bị xử lý theo quy định.</p>
+        </div>
+
+        <footer class="text-center mt-8 text-gray-500">
+            <p>&copy; 2025 - NT547 - Blockchain: Nền tảng, ứng dụng, bảo mật.</p>
+        </footer>
+
+    </div>
+
+</body>
+</html>
