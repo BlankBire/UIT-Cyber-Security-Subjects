@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài thực hành 2: Lập trình Smart Contract với Solidity (Nâng cao)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .container {
+            max-width: 900px;
+        }
+        h1, h2, h3 {
+            font-weight: 700;
+        }
+        code {
+            background-color: #f3f4f6;
+            color: #ef4444;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        pre > code {
+            display: block;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            color: #e5e7eb;
+            background-color: #1f2937;
+        }
+        .task-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.3s ease;
+        }
+        .task-card:hover {
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .badge-easy { background-color: #dcfce7; color: #166534; }
+        .badge-medium { background-color: #fef9c3; color: #854d0e; }
+        .badge-hard { background-color: #fee2e2; color: #991b1b; }
+        .badge-advanced { background-color: #e0e7ff; color: #3730a3; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-gray-900">Lab 02: Lập trình Hợp đồng thông minh (Smart Contract) với Solidity</h1>
+            <p class="text-lg text-gray-600 mt-2">NT547: Blockchain: Nền tảng, ứng dụng, bảo mật.</p>
+        </header>
+
+        <section class="mb-8">
+            <h2 class="text-2xl font-bold border-b-2 border-indigo-500 pb-2 mb-4">1. Mục tiêu và Tổng quan</h2>
+            <p class="mb-2"><strong>Mục tiêu:</strong> Bài thực hành này giúp sinh viên chuyển từ lý thuyết sang thực hành trên nền tảng blockchain Ethereum. Sinh viên sẽ làm quen với ngôn ngữ lập trình Solidity, môi trường phát triển Remix IDE, và quy trình từ viết code, biên dịch, triển khai đến tương tác với một hợp đồng thông minh trên mạng thử nghiệm (testnet).</p>
+            <p><strong>Tổng quan:</strong> Chúng ta sẽ tập trung vào Ethereum, nền tảng hợp đồng thông minh phổ biến nhất. Sinh viên sẽ học cách viết các hợp đồng với độ phức tạp tăng dần, sử dụng công cụ chuyên nghiệp để đưa chúng lên blockchain và tương tác với các chức năng của nó.</p>
+        </section>
+
+        <section class="mb-8">
+            <h2 class="text-2xl font-bold border-b-2 border-indigo-500 pb-2 mb-4">2. Kiến thức Nền tảng</h2>
+            <ul class="list-disc list-inside space-y-3">
+                <li><strong>Ethereum và EVM:</strong> Ethereum là một "máy tính thế giới" phi tập trung. Trung tâm của nó là Máy ảo Ethereum (EVM), môi trường thực thi các hợp đồng thông minh. Mã Solidity được biên dịch thành bytecode mà EVM có thể hiểu và chạy.</li>
+                <li><strong>Solidity:</strong> Là ngôn ngữ lập trình hướng đối tượng, bậc cao, có cú pháp tương tự C++ và JavaScript, được dùng để viết smart contract trên các blockchain tương thích EVM.</li>
+                <li><strong>Remix IDE:</strong> Môi trường phát triển tích hợp (IDE) trên trình duyệt, cung cấp bộ công cụ đầy đủ để viết, biên dịch, gỡ lỗi và triển khai hợp đồng thông minh mà không cần cài đặt.</li>
+                <li><strong>MetaMask:</strong> Một ví tiền điện tử dạng tiện ích mở rộng trên trình duyệt, đóng vai trò là cầu nối giữa người dùng (hoặc IDE như Remix) và mạng blockchain Ethereum.</li>
+                <li><strong>Testnet (Mạng thử nghiệm):</strong> Là bản sao của mạng chính (Mainnet) nhưng sử dụng Ether "giả" không có giá trị. Mạng <strong>Sepolia</strong> là một testnet phổ biến để các nhà phát triển thử nghiệm ứng dụng mà không tốn chi phí thật. Ether thử nghiệm có thể nhận miễn phí từ các trang Faucet.</li>
+                 <li><strong>Gas:</strong> Là đơn vị đo lường lượng công việc tính toán cần thiết để thực hiện một hành động trên Ethereum. Mọi giao dịch làm thay đổi trạng thái của blockchain (như lưu trữ dữ liệu mới) đều tốn một khoản phí gọi là "phí gas", được trả bằng ETH. Các hành động chỉ đọc dữ liệu (hàm `view` hoặc `pure`) không làm thay đổi trạng thái nên không tốn gas khi được gọi từ bên ngoài.</li>
+            </ul>
+        </section>
+
+        <section class="mb-8">
+            <h2 class="text-2xl font-bold border-b-2 border-indigo-500 pb-2 mb-4">3. Chuẩn bị Môi trường</h2>
+            <ol class="list-decimal list-inside space-y-2">
+                <li><strong>Cài đặt MetaMask:</strong>
+                    <ul>
+                        <li>- Truy cập <a href="https://metamask.io/" target="_blank" class="text-indigo-600 hover:underline">metamask.io</a> và cài đặt tiện ích mở rộng cho trình duyệt của SV (Chrome, Firefox, Brave, Edge).</li>
+                        <li>- Tạo một ví mới, <strong>LƯU LẠI 12 TỪ KHÓA KHÔI PHỤC (RECOVERY PHRASE)</strong> ở một nơi cực kỳ an toàn và không bao giờ chia sẻ nó với ai.</li>
+                    </ul>
+                </li>
+                <li><strong>Chuyển sang mạng Sepolia Testnet:</strong>
+                    <ul>
+                        <li>- Trong MetaMask, nhấp vào menu chọn mạng ở góc trên bên trái.</li>
+                        <li>- Bật tùy chọn "Show test networks" (Hiển thị mạng thử nghiệm).</li>
+                        <li>- Chọn mạng "Sepolia".</li>
+                    </ul>
+                </li>
+                <li><strong>Nhận ETH thử nghiệm (Faucet):</strong>
+                    <ul>
+                        <li>- Truy cập một trong các trang Faucet cho Sepolia:
+                            <a href="https://sepoliafaucet.com/" target="_blank" class="text-indigo-600 hover:underline">sepoliafaucet.com</a>, 
+                            <a href="https://www.alchemy.com/faucets/ethereum-sepolia" target="_blank" class="text-indigo-600 hover:underline">alchemy.com/faucets/ethereum-sepolia</a>.
+                        </li>
+                        <li>- Sao chép địa chỉ ví của bạn từ MetaMask, dán vào trang Faucet và yêu cầu gửi ETH. SV có thể cần đăng nhập bằng tài khoản Google/Github.</li>
+                    </ul>
+                </li>
+                 <li><strong>Mở Remix IDE:</strong> Truy cập <a href="https://remix.ethereum.org/" target="_blank" class="text-indigo-600 hover:underline">remix.ethereum.org</a>. Giao diện chính gồm 3 khu vực quan trọng: File Explorer, Solidity Compiler, và Deploy & Run Transactions.</li>
+            </ol>
+        </section>
+        
+        <section class="mb-8">
+            <h2 class="text-2xl font-bold border-b-2 border-indigo-500 pb-2 mb-4">4. Yêu cầu & Thang điểm (Tổng: 10 điểm + 2 điểm thưởng)</h2>
+            <p class="text-gray-600 mb-6">Hoàn thành các yêu cầu sau theo thứ tự. Mỗi yêu cầu xây dựng dựa trên kiến thức của yêu cầu trước, với độ khó tăng dần. Nộp báo cáo bao gồm: mã nguồn cho từng contract, địa chỉ contract đã triển khai trên Sepolia Etherscan, và ảnh chụp màn hình các bước tương tác quan trọng.</p>
+
+            <!-- Yêu cầu 1 -->
+            <div class="task-card">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xl text-indigo-700">Câu 1: Khởi động - SimpleStorage Contract</h3>
+                    <span class="badge badge-easy">Dễ - 2.0 điểm</span>
+                </div>
+                <p class="mb-4">Mục tiêu của câu này là đảm bảo SV đã nắm vững quy trình cơ bản: viết, biên dịch, triển khai và tương tác với một contract đơn giản nhất.</p>
+                <ul class="list-disc list-inside space-y-2">
+                    <li><strong>(0.5đ)</strong> Tạo file <code>SimpleStorage.sol</code>, viết contract có một biến trạng thái <code>uint256 public favoriteNumber</code>.</li>
+                    <li><strong>(0.5đ)</strong> Viết hàm <code>store(uint256 _newNumber)</code> để cập nhật giá trị cho <code>favoriteNumber</code>.</li>
+                    <li><strong>(0.5đ)</strong> Viết hàm <code>retrieve() public view returns (uint256)</code> để đọc giá trị của <code>favoriteNumber</code>.</li>
+                    <li><strong>(0.5đ)</strong> Biên dịch, triển khai contract lên Sepolia Testnet, gọi hàm <code>store</code> với một số bất kỳ, sau đó gọi <code>retrieve</code> để kiểm tra. Nộp lại link Etherscan của contract.</li>
+                </ul>
+                <details class="mt-4">
+                    <summary class="cursor-pointer text-indigo-600 font-medium">Xem mã nguồn gợi ý</summary>
+                    <pre class="mt-2"><code class="language-solidity">// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract SimpleStorage {
+    uint256 public favoriteNumber;
+
+    function store(uint256 _newNumber) public {
+        favoriteNumber = _newNumber;
+    }
+
+    function retrieve() public view returns (uint256) {
+        return favoriteNumber;
+    }
+}</code></pre>
+                </details>
+            </div>
+
+            <!-- Yêu cầu 2 -->
+            <div class="task-card">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xl text-indigo-700">Câu 2: Quản lý thông tin - StudentInfo Contract</h3>
+                    <span class="badge badge-medium">Trung bình - 3.0 điểm</span>
+                </div>
+                <p class="mb-4">Câu này giới thiệu về hàm <code>constructor</code> (hàm khởi tạo chỉ chạy một lần khi triển khai) và cách quản lý nhiều biến trạng thái với các hàm cập nhật riêng biệt.</p>
+                <ul class="list-disc list-inside space-y-2">
+                    <li><strong>(0.5đ)</strong> Tạo file <code>StudentInfo.sol</code> với 2 biến trạng thái: <code>string public studentName</code> và <code>uint256 public studentID</code>.</li>
+                    <li><strong>(1.0đ)</strong> Viết hàm <code>constructor(string memory _initialName, uint256 _initialID)</code> để gán giá trị ban đầu cho tên và mã số sinh viên ngay khi triển khai.</li>
+                    <li><strong>(0.5đ)</strong> Viết hàm <code>updateName(string memory _newName) public</code> để chỉ cập nhật tên sinh viên.</li>
+                    <li><strong>(0.5đ)</strong> Viết hàm <code>updateID(uint256 _newID) public</code> để chỉ cập nhật mã số sinh viên.</li>
+                    <li><strong>(0.5đ)</strong> Triển khai contract với thông tin của SV, sau đó gọi một trong hai hàm cập nhật để thay đổi thông tin. Nộp lại link Etherscan.</li>
+                </ul>
+            </div>
+            
+            <!-- Yêu cầu 3 -->
+            <div class="task-card">
+                 <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xl text-indigo-700">Câu 3: Lưu trữ dữ liệu phức tạp - StudentGrades Contract</h3>
+                    <span class="badge badge-hard">Khó - 5.0 điểm</span>
+                </div>
+                <p class="mb-4">Yêu cầu này nâng cao độ khó bằng cách giới thiệu các kiểu dữ liệu phức tạp và mạnh mẽ trong Solidity: <code>struct</code> (cấu trúc) và <code>mapping</code> (ánh xạ), cho phép lưu trữ danh sách dữ liệu có cấu trúc.</p>
+                <ul class="list-disc list-inside space-y-2">
+                    <li><strong>(1.0đ)</strong> Tạo file <code>StudentGrades.sol</code>. Định nghĩa một <code>struct</code> tên là <code>Subject</code> bao gồm 2 trường: <code>string subjectName</code> và <code>uint8 grade</code> (điểm số từ 0-255, phù hợp cho thang điểm 10 hoặc 100).</li>
+                    <li><strong>(1.0đ)</strong> Khai báo một biến trạng thái <code>mapping(uint256 => Subject) public grades;</code>. Mapping này sẽ ánh xạ từ mã môn học (<code>uint256</code>) đến thông tin môn học (<code>Subject</code>).</li>
+                    <li><strong>(1.5đ)</strong> Viết hàm <code>addOrUpdateGrade(uint256 _subjectCode, string memory _subjectName, uint8 _grade) public</code>. Hàm này sẽ thêm mới hoặc cập nhật điểm cho một môn học dựa vào mã môn học.</li>
+                    <li><strong>(1.0đ)</strong> Viết hàm <code>getGrade(uint256 _subjectCode) public view returns (string memory, uint8)</code>. Hàm này trả về tên và điểm của môn học tương ứng với mã được cung cấp.</li>
+                    <li><strong>(0.5đ)</strong> Triển khai contract. Gọi hàm <code>addOrUpdateGrade</code> ít nhất 2 lần để thêm 2 môn học. Sau đó, gọi lại hàm này để cập nhật điểm cho 1 trong 2 môn đó. Dùng hàm <code>getGrade</code> để kiểm tra. Nộp lại link Etherscan.</li>
+                </ul>
+            </div>
+
+            <!-- Yêu cầu 4 -->
+            <div class="task-card border-indigo-200 bg-indigo-50">
+                 <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xl text-indigo-800">Câu 4: Nâng cao - Events & Access Control</h3>
+                    <span class="badge badge-advanced">Thưởng - 2.0 điểm</span>
+                </div>
+                <p class="mb-4">Câu hỏi nâng cao này giới thiệu 2 khái niệm cực kỳ quan trọng trong thực tế: <strong>Access Control</strong> (kiểm soát truy cập) để bảo mật và <strong>Events</strong> (sự kiện) để giao tiếp với các ứng dụng bên ngoài blockchain.</p>
+                <ul class="list-disc list-inside space-y-2">
+                    <li><strong>(0.5đ)</strong> Kế thừa contract <code>StudentGrades.sol</code>. Thêm một biến trạng thái <code>address public owner;</code>. Trong hàm <code>constructor</code>, gán địa chỉ của người triển khai cho biến owner: <code>owner = msg.sender;</code>.</li>
+                    <li><strong>(0.5đ)</strong> Thêm cơ chế kiểm soát truy cập vào hàm <code>addOrUpdateGrade</code>. Chỉ có <code>owner</code> mới được phép gọi hàm này. Sử dụng câu lệnh <code>require(msg.sender == owner, "Only the owner can call this function.");</code> ở đầu hàm.</li>
+                    <li><strong>(0.5đ)</strong> Định nghĩa một <code>event GradeUpdated(uint256 indexed subjectCode, string newName, uint8 newGrade);</code>. Việc thêm `indexed` vào `subjectCode` giúp tìm kiếm sự kiện này dễ dàng hơn.</li>
+                    <li><strong>(0.5đ)</strong> Trong hàm <code>addOrUpdateGrade</code>, sau khi cập nhật điểm, hãy phát ra (emit) sự kiện <code>GradeUpdated</code> với các thông tin tương ứng.</li>
+                    <li><strong>Yêu cầu báo cáo:</strong> Triển khai contract, gọi hàm cập nhật điểm. Sau đó, vào trang giao dịch trên Etherscan, tìm đến tab "Logs" (hoặc "Events") để xem sự kiện đã được phát ra. Chụp màn hình tab này và giải thích ngắn gọn vai trò của `require` và `event` trong smart contract.</li>
+                </ul>
+            </div>
+
+        </section>
+
+        <footer class="text-center text-gray-500 mt-12">
+            <p>Làm bài cá nhân. Các quy định nộp bài và đặt tên file giống Lab 01. Bài giống nhau nhận điểm 0!</p>
+        </footer>
+    </div>
+</body>
+</html>
