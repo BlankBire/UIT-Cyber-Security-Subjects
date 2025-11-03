@@ -36,3 +36,9 @@
 *.png linguist-detectable=true
 *.jpg linguist-detectable=true
 *.gif linguist-detectable=true
+
+# Docker
+Dockerfile linguist-detectable=true
+*.dockerfile linguist-detectable=true
+docker-compose*.yml linguist-detectable=true
+docker-compose*.yaml linguist-detectable=true
