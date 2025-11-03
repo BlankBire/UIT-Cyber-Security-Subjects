@@ -1,0 +1,471 @@
+<DOCUMENT filename="Lab4.html">
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 4: Lập trình NFT và Dapps</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 700;
+        }
+        h2 {
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 8px;
+            margin-top: 2.5rem;
+        }
+        h3 {
+            margin-top: 2rem;
+        }
+        h4 {
+            margin-top: 1.5rem;
+        }
+        p, ul, ol {
+            line-height: 1.75;
+            margin-top: 1rem;
+        }
+        ul, ol {
+            padding-left: 1.25rem;
+        }
+        li {
+            margin-bottom: 0.5rem;
+        }
+        pre {
+            background-color: #1f2937;
+            color: #f3f4f6;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin-top: 1rem;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+        }
+        code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            background-color: #e5e7eb;
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            font-size: 0.9em;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            font-size: 1em;
+        }
+        .highlight {
+            background-color: #fef3c7;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            border: 1px solid #fde68a;
+        }
+        .note {
+            background-color: #e0f2fe;
+            border-left: 4px solid #0ea5e9;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            border-radius: 0.375rem;
+        }
+        .note strong {
+            color: #0c4a6e;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="max-w-4xl mx-auto p-6 md:p-10 bg-white shadow-lg rounded-lg my-10">
+
+        <h1 class="text-4xl font-bold text-center text-blue-700">Lab 4: Lập trình NFT và Dapps</h1>
+        <p class="text-center text-lg text-gray-600 mt-2">Xây dựng ứng dụng phi tập trung End-to-End</p>
+
+        <div class="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+            <h2 class="text-2xl font-bold text-blue-800 !mt-0 !border-none">Mục tiêu và Tổng quan</h2>
+            <p>Bài lab tổng hợp này được thiết kế để cung cấp cho sinh viên một cái nhìn toàn diện về quy trình phát triển một sản phẩm blockchain hoàn chỉnh, từ "backend" (on-chain) đến "frontend" (off-chain).</p>
+            <ul>
+                <li><strong>Mục tiêu (Backend):</strong> Hiểu và áp dụng tiêu chuẩn ERC-721 để lập trình một hợp đồng thông minh (Smart Contract) cho bộ sưu tập NFT. Sinh viên sẽ học cách xử lý metadata, lưu trữ trên IPFS và sử dụng thư viện OpenZeppelin.</li>
+                <li><strong>Mục tiêu (Frontend):</strong> Tích hợp Smart Contract đã tạo với một giao diện người dùng (React.js) để xây dựng một ứng dụng phi tập trung (DApp) hoàn chỉnh. Sinh viên sẽ học cách dùng Ethers.js để kết nối frontend với blockchain qua ví MetaMask.</li>
+                <li><strong>Tổng quan:</strong> Đây là bài lab then chốt, kết nối hai thế giới: logic on-chain (Solidity) và giao diện off-chain (JavaScript/React). Việc nắm vững kỹ năng này là điều kiện tiên quyết để tạo ra các sản phẩm blockchain mà người dùng cuối có thể tương tác.</li>
+            </ul>
+        </div>
+        
+        <!-- ====================================================================== -->
+        <!-- PHẦN 1: SMART CONTRACT (TỪ LAB 3) -->
+        <!-- ====================================================================== -->
+        
+        <h2 class="text-3xl font-bold text-gray-900">Phần 1: Xây dựng Smart Contract (Backend On-chain)</h2>
+        <p>Trong phần này, chúng ta sẽ tập trung vào việc tạo ra "linh hồn" của bộ sưu tập NFT: một Smart Contract tuân thủ tiêu chuẩn ERC-721.</p>
+
+        <h3>1.1. Kiến thức Nền tảng (On-chain)</h3>
+        
+        <h4>ERC-721 (Non-Fungible Token)</h4>
+        <p>Đây là tiêu chuẩn cho các token không thể thay thế cho nhau. Mỗi token là duy nhất, có một định danh <code>tokenId</code> riêng và có thể có các thuộc tính khác nhau. Đây là tiêu chuẩn cho vật phẩm sưu tầm, nghệ thuật số, v.v.</p>
+
+        <h4>Metadata và IPFS</h4>
+        <p>Mỗi NFT gắn liền với dữ liệu mô tả (tên, hình ảnh, thuộc tính) gọi là <strong>metadata</strong>. Lưu trữ hình ảnh trực tiếp lên blockchain là cực kỳ tốn kém. Do đó, chúng ta sẽ:</p>
+        <ol>
+            <li>Lưu trữ hình ảnh và file metadata (JSON) trên <strong>IPFS (InterPlanetary File System)</strong> - một hệ thống lưu trữ phi tập trung.</li>
+            <li>Lưu một liên kết (URI) trỏ đến file metadata đó trên blockchain.</li>
+            <li>Chúng ta sẽ sử dụng dịch vụ "pinning" như <a href="https://www.pinata.cloud/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Pinata.cloud</a> để đảm bảo dữ liệu luôn có sẵn.</li>
+        </ol>
+
+        <h4>OpenZeppelin</h4>
+        <p>Một thư viện mã nguồn mở cung cấp các Smart Contract đã được kiểm toán bảo mật. Thay vì tự viết lại toàn bộ logic ERC-721, chúng ta sẽ kế thừa từ các hợp đồng của OpenZeppelin. Đây là một "best practice" trong ngành.</p>
+
+        <h3>1.2. Hướng dẫn Thực hành (Phần 1)</h3>
+
+        <h4>Bước 1.1: Chuẩn bị và Tải Metadata lên IPFS</h4>
+        <ol>
+            <li>Chuẩn bị 1 file hình ảnh bất kỳ (<code>.png</code>, <code>.jpg</code>) cho NFT của SV.</li>
+            <li>Đăng ký tài khoản miễn phí trên <a href="https://www.pinata.cloud/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Pinata.cloud</a>.</li>
+            <li>Tải file hình ảnh của SV lên Pinata. Sau khi thành công, sao chép mã <strong>CID</strong> của hình ảnh (ví dụ: <code>Qm...</code>).</li>
+            <li>Tạo một file văn bản mới tên là <code>mynft.json</code> với nội dung sau, thay thế <code>YOUR_IMAGE_CID</code> bằng mã CID SV vừa sao chép:
+<pre><code>{
+    "name": "My First DApp NFT",
+    "description": "A unique collectible from the combined lab.",
+    "image": "ipfs://YOUR_IMAGE_CID"
+}
+</code></pre>
+            </li>
+            <li>Tải file <code>mynft.json</code> này lên Pinata.</li>
+            <li>Sau khi tải lên, sao chép <strong>CID của file JSON</strong>. URL đầy đủ trỏ đến metadata của SV sẽ là: <br>
+                <code class="highlight text-sm">https://gateway.pinata.cloud/ipfs/YOUR_METADATA_CID</code>
+            </li>
+        </ol>
+        <p class="note"><strong>Quan trọng:</strong> Hãy lưu lại URL metadata này, chúng ta sẽ cần nó ở cả Phần 1 và Phần 2.</p>
+
+        <h4>Bước 1.2: Viết Hợp đồng NFT (MyNFT.sol)</h4>
+        <ol>
+            <li>Mở <strong>Remix IDE</strong>, tạo file mới <code>MyNFT.sol</code> trong thư mục <code>contracts</code>.</li>
+            <li>Dán đoạn mã sau vào file:</li>
+        </ol>
+<pre><code class="language-solidity">// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+
+contract MyNFT is ERC721URIStorage, Ownable {
+    using Counters for Counters.Counter;
+    Counters.Counter private _tokenIds;
+
+    constructor() ERC721("MyNFTCollection", "MNC") Ownable(msg.sender) {}
+
+    function safeMint(address to, string memory uri) public onlyOwner {
+        uint256 tokenId = _tokenIds.current();
+        _tokenIds.increment();
+        _safeMint(to, tokenId);
+        _setTokenURI(tokenId, uri);
+    }
+}
+</code></pre>
+
+        <h4>Bước 1.3: Biên dịch và Triển khai</h4>
+        <ol>
+            <li>Chuyển đến tab <strong>Solidity Compiler</strong>, chọn phiên bản compiler <code>0.8.20</code> (hoặc mới hơn) và nhấn <strong>Compile MyNFT.sol</strong>.</li>
+            <li>Chuyển đến tab <strong>Deploy & Run Transactions</strong>.</li>
+            <li>Chọn <strong>Environment</strong> là <strong>Injected Provider - MetaMask</strong>. Đảm bảo MetaMask của SV đang kết nối với mạng <strong>Sepolia Testnet</strong>.</li>
+            <li>Nhấn <strong>Deploy</strong> và xác nhận giao dịch trên MetaMask.</li>
+        </ol>
+        <p class="note"><strong>Quan trọng:</strong> Sau khi triển khai thành công, hãy sao chép <strong>Địa chỉ Hợp đồng (Contract Address)</strong> của SV và lưu lại. SV sẽ cần nó cho Phần 2.</p>
+
+        <h4>Bước 1.4: Kiểm tra Hợp đồng (Mint trên Remix)</h4>
+        <p>Trước khi xây dựng DApp, chúng ta cần đảm bảo hợp đồng hoạt động chính xác.</p>
+        <ol>
+            <li>Trong Remix, bên dưới mục "Deployed Contracts", tìm hợp đồng <code>MyNFT</code> của SV.</li>
+            <li>Mở rộng nó, SV sẽ thấy hàm <code>safeMint</code>.</li>
+            <li>Trong trường <code>to (address)</code>: dán địa chỉ ví MetaMask của SV.</li>
+            <li>Trong trường <code>uri (string)</code>: dán URL metadata từ Pinata (Bước 1.1).</li>
+            <li>Nhấn <strong>transact</strong> và xác nhận giao dịch trên MetaMask.</li>
+        </ol>
+
+        <h4>Bước 1.5: Xác thực trên Rarible (Testnet)</h4>
+        <ol>
+            <li>Truy cập <a href="https://testnet.rarible.com/" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">https://testnet.rarible.com/</a>.</li>
+            <li>Kết nối ví MetaMask của SV (đảm bảo đang ở mạng Sepolia).</li>
+            <li>Đi đến trang cá nhân (Profile). NFT của SV có thể sẽ không xuất hiện tự động.</li>
+            <li><strong>Cách kiểm tra:</strong> Sao chép <strong>Địa chỉ Hợp đồng</strong> của SV (từ Bước 1.3) và dán vào thanh tìm kiếm trên Rarible. SV sẽ thấy bộ sưu tập của mình. Nhấp vào đó để xem NFT SV vừa mint (<code>tokenId</code> là 0).</li>
+            <li>(Có thể mất vài phút đến vài giờ để Rarible quét và hiển thị metadata).</li>
+        </ol>
+        <p>Nếu SV thấy NFT của mình, xin chúc mừng! "Backend" on-chain đã hoạt động hoàn hảo. Giờ hãy xây dựng giao diện cho nó.</p>
+
+
+        <!-- ====================================================================== -->
+        <!-- PHẦN 2: DAPP FRONTEND (TỪ LAB 4) -->
+        <!-- ====================================================================== -->
+
+        <h2 class="text-3xl font-bold text-gray-900">Phần 2: Xây dựng Giao diện DApp (Frontend Off-chain)</h2>
+        <p>Ở phần này, chúng ta sẽ tạo một trang web React đơn giản để người dùng có thể kết nối ví và mint NFT từ chính hợp đồng SV vừa triển khai.</p>
+
+        <h3>2.1. Kiến thức Nền tảng (Off-chain)</h3>
+
+        <h4>Kiến trúc DApp</h4>
+        <p>Kiến trúc DApp khác với web truyền thống: <strong>Frontend (React) -> Wallet (MetaMask) -> Blockchain (Ethereum)</strong>. Ví MetaMask đóng vai trò trung gian xác thực và ký giao dịch thay cho máy chủ backend.</p>
+
+        <h4>Node.js và React</h4>
+        <ul>
+            <li><strong>Node.js:</strong> Môi trường thực thi JavaScript, cần thiết để chạy các công cụ xây dựng dự án React.</li>
+            <li><strong>React:</strong> Thư viện JavaScript phổ biến để xây dựng giao diện người dùng. Chúng ta sẽ dùng <code>create-react-app</code> để tạo dự án.</li>
+        </ul>
+
+        <h4>Ethers.js</h4>
+        <p>Thư viện JavaScript mạnh mẽ để tương tác với blockchain Ethereum. Ba khái niệm cốt lõi:</p>
+        <ul>
+            <li><strong>Provider:</strong> Đại diện cho kết nối đến mạng Ethereum (ví dụ: qua MetaMask) để đọc dữ liệu.</li>
+            <li><strong>Signer:</strong> Đại diện cho một tài khoản người dùng (lấy từ Provider) có thể ký giao dịch và thay đổi trạng thái (ghi dữ liệu).</li>
+            <li><strong>Contract:</strong> Một đối tượng JavaScript đại diện cho Smart Contract của SV trên blockchain. SV khởi tạo nó với (1) Địa chỉ, (2) ABI, và (3) Signer.</li>
+        </ul>
+
+        <h3>2.2. Hướng dẫn Thực hành (Phần 2)</h3>
+
+        <h4>Bước 2.1: Lấy ABI và Địa chỉ Hợp đồng</h4>
+        <ol>
+            <li><strong>Địa chỉ Hợp đồng:</strong> Lấy địa chỉ SV đã lưu ở <strong>Bước 1.3</strong>.</li>
+            <li><strong>Lấy ABI:</strong>
+                <ul>
+                    <li>Quay lại <strong>Remix IDE</strong>, tab <strong>Solidity Compiler</strong>.</li>
+                    <li>Sau khi biên dịch thành công, nhấn nút <strong>"ABI"</strong> để sao chép toàn bộ ABI (dưới dạng JSON).</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h4>Bước 2.2: Thiết lập Dự án React</h4>
+        <ol>
+            <li>Mở terminal (dòng lệnh) trên máy tính của SV.</li>
+            <li>Chạy các lệnh sau để tạo dự án React mới và cài đặt Ethers.js:
+<pre><code>npx create-react-app my-nft-dapp
+cd my-nft-dapp
+npm install ethers@5.7
+</code></pre>
+            </li>
+            <li>Mở thư mục <code>my-nft-dapp</code> trong trình soạn thảo code (ví dụ: VS Code).</li>
+            <li>Tạo một thư mục mới <code>src/utils</code>. Bên trong, tạo file <code>MyNFT.json</code> và dán toàn bộ ABI SV đã sao chép ở trên vào file này.</li>
+        </ol>
+
+        <h4>Bước 2.3: Xây dựng Giao diện và Kết nối MetaMask</h4>
+        <p>Mở file <code>src/App.js</code>, xóa toàn bộ nội dung mặc định và thay thế bằng mã sau. Đừng quên cập nhật 2 giá trị quan trọng!</p>
+
+<pre><code class="language-javascript">// src/App.js
+import { useState } from 'react';
+import { ethers } from 'ethers';
+import MyNFT_ABI from './utils/MyNFT.json';
+import './App.css';
+
+// ==================================================================
+// !!! CẬP NHẬT 2 GIÁ TRỊ NÀY !!!
+// Dán địa chỉ hợp đồng của SV từ Bước 1.3
+const contractAddress = "YOUR_NFT_CONTRACT_ADDRESS"; 
+// Dán URL metadata của SV từ Bước 1.1
+const metadataURI = "https://gateway.pinata.cloud/ipfs/YOUR_METADATA_CID";
+// ==================================================================
+
+function App() {
+  const [walletAddress, setWalletAddress] = useState(null);
+  const [mintingStatus, setMintingStatus] = useState(null);
+  const [txHash, setTxHash] = useState(null);
+
+  async function connectWallet() {
+    if (typeof window.ethereum !== 'undefined') {
+      console.log('MetaMask is installed!');
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        console.log('Connected account:', accounts[0]);
+        setWalletAddress(accounts[0]);
+      } catch (error) {
+        console.error('User denied account access', error);
+      }
+    } else {
+      console.log('Please install MetaMask!');
+      alert('Please install MetaMask!');
+    }
+  }
+
+  async function handleMint() {
+    if (!walletAddress) {
+      alert("Please connect your wallet first.");
+      return;
+    }
+    
+    if (typeof window.ethereum !== 'undefined') {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      const nftContract = new ethers.Contract(contractAddress, MyNFT_ABI, signer);
+
+      try {
+        setMintingStatus('Minting... Vui lòng xác nhận giao dịch trên MetaMask.');
+        setTxHash(null);
+
+        const tx = await nftContract.safeMint(walletAddress, metadataURI);
+        console.log('Transaction sent:', tx.hash);
+        
+        setMintingStatus('Đang chờ giao dịch được xác nhận...');
+        await tx.wait();
+        
+        console.log('Transaction confirmed!');
+        setMintingStatus('Mint thành công!');
+        setTxHash(tx.hash);
+
+      } catch (error) {
+        console.error('Minting failed:', error);
+        setMintingStatus(`Mint thất bại: ${error.message}`);
+      }
+    }
+  }
+
+  return (
+    &lt;div className="App"&gt;
+      &lt;header className="App-header"&gt;
+        &lt;h1&gt;My NFT DApp&lt;/h1&gt;
+        
+        &lt;button onClick={connectWallet} className="connect-button"&gt;
+          {walletAddress 
+            ? `Connected: ${walletAddress.substring(0, 6)}...${walletAddress.substring(38)}` 
+            : 'Connect Wallet'}
+        &lt;/button&gt;
+
+        {walletAddress && (
+          &lt;div className="mint-container"&gt;
+            &lt;button onClick={handleMint} className="mint-button"&gt;Mint My NFT&lt;/button&gt;
+            {mintingStatus && &lt;p className="status-text"&gt;{mintingStatus}&lt;/p&gt;}
+            {txHash && (
+              &lt;p className="tx-link"&gt;
+                Xem giao dịch: 
+                &lt;a href={`https://sepolia.etherscan.io/tx/${txHash}`} target="_blank" rel="noopener noreferrer"&gt;Etherscan&lt;/a&gt;
+              &lt;/p&gt;
+            )}
+          &lt;/div&gt;
+        )}
+      &lt;/header&gt;
+    &lt;/div&gt;
+  );
+}
+
+export default App;
+</code></pre>
+
+        <h4>Bước 2.4: Chạy và Kiểm tra DApp</h4>
+        <ol>
+            <li>Mở file <code>src/App.css</code> và thêm một số style cơ bản để dễ nhìn hơn:
+<pre><code class="language-css">/* src/App.css */
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+.connect-button, .mint-button {
+  background-color: #61dafb;
+  color: #282c34;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 20px;
+}
+.mint-button {
+  background-color: #4CAF50;
+  color: white;
+}
+.mint-container {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.status-text {
+  margin-top: 15px;
+  font-size: 0.9rem;
+  color: #f3f3f3;
+}
+.tx-link a {
+  color: #61dafb;
+}
+</code></pre>
+            </li>
+            <li>Quay lại terminal, chạy lệnh: <code>npm start</code>.</li>
+            <li>Trang DApp của SV sẽ mở trên <code>http://localhost:3000</code>.</li>
+            <li>Thử kết nối ví, sau đó nhấn nút "Mint My NFT".</li>
+            <li>Xác nhận giao dịch trên MetaMask và chờ đợi kết quả!</li>
+        </ol>
+
+
+        <!-- ====================================================================== -->
+        <!-- PHẦN 3: BÀI TẬP NÂNG CAO (FULLY RESTORED) -->
+        <!-- ====================================================================== -->
+
+        <h2 class="text-3xl font-bold text-gray-900">Phần 3: Yêu cầu và Bài tập Nâng cao</h2>
+        <p>Bây giờ, hãy kết hợp và nâng cấp cả backend lẫn frontend với các tính năng mới.</p>
+
+        <ol class="list-decimal space-y-6 mt-6">
+            <li>
+                <strong>Nâng cấp Smart Contract (Backend):</strong>
+                <p>Sửa đổi hợp đồng <code>MyNFT.sol</code> để thêm 2 tính năng:</p>
+                <ul>
+                    <li><strong>Thêm Phí Mint:</strong> Yêu cầu người gọi phải trả một khoản phí (ví dụ: <code>0.01 ETH</code>) cho mỗi lần mint.
+                        <br><em>Gợi ý: Thêm <code>payable</code> vào hàm <code>safeMint</code>, khai báo biến <code>mintFee</code> và dùng <code>require(msg.value >= mintFee, ...)</code>.</em>
+                    </li>
+                    <li><strong>Giới hạn Tổng cung (Max Supply):</strong> Chỉ cho phép mint một số lượng NFT tối đa (ví dụ: 100).
+                        <br><em>Gợi ý: Khai báo biến <code>MAX_SUPPLY</code> và kiểm tra <code>require(_tokenIds.current() < MAX_SUPPLY, ...)</code>.</em>
+                    </li>
+                </ul>
+                <p>Sau khi sửa, SV phải <strong>triển khai lại hợp đồng</strong> và cập nhật <code>contractAddress</code> mới trong DApp.</p>
+            </li>
+
+            <li>
+                <strong>Cập nhật DApp (Frontend) để hỗ trợ Phí Mint:</strong>
+                <p>Sửa file <code>App.js</code> để DApp có thể hoạt động với hợp đồng mới. Khi gọi hàm <code>safeMint</code>, SV cần gửi kèm giá trị ETH (phí mint).</p>
+                <p class="note"><strong>Gợi ý:</strong> Với Ethers.js, SV truyền giá trị ETH bằng cách thêm một đối tượng <code>override</code> vào cuối lệnh gọi hàm:
+<pre><code>const mintFee = ethers.utils.parseEther("0.01");
+const tx = await nftContract.safeMint(walletAddress, metadataURI, { 
+    value: mintFee 
+});
+</code></pre>
+                </p>
+            </li>
+
+            <li>
+                <strong>Hiển thị Thông tin NFT (Frontend):</strong>
+                <p>Xây dựng một giao diện (ô input, nút) cho phép người dùng nhập vào một <code>tokenId</code>. Khi nhấn nút, DApp sẽ:</p>
+                <ol>
+                    <li>Gọi hàm <code>tokenURI(tokenId)</code> trên hợp đồng (đây là hàm <code>view</code>, không tốn gas).</li>
+                    <li>Sau khi nhận được URI, dùng <code>fetch</code> API của JavaScript để lấy nội dung file JSON metadata từ IPFS.</li>
+                    <li>Hiển thị <strong>tên</strong>, <strong>mô tả</strong>, và <strong>hình ảnh</strong> của NFT đó lên giao diện.</li>
+                </ol>
+            </li>
+
+            <li>
+                <strong>Hiển thị Bộ sưu tập của Người dùng (Frontend - Nâng cao):</strong>
+                <p>Thêm chức năng hiển thị tất cả các NFT mà địa chỉ ví đang kết nối sở hữu.</p>
+                <p class="note"><strong>Gợi ý:</strong> Đây là một yêu cầu phức tạp. Cách làm chuẩn là SV phải nâng cấp hợp đồng (Phần 1) để kế thừa thêm <code>ERC721Enumerable.sol</code> của OpenZeppelin. Tiêu chuẩn mở rộng này sẽ cung cấp các hàm <code>balanceOf(owner)</code> để lấy số lượng NFT và <code>tokenOfOwnerByIndex(owner, index)</code> để lấy từng <code>tokenId</code>. Sau đó, SV lặp qua các <code>tokenId</code> để lấy <code>tokenURI</code> và hiển thị chúng.</p>
+            </li>
+
+            <li>
+                <strong>Viết Báo cáo Tổng kết:</strong>
+                <p>Nộp báo cáo bao gồm:</p>
+                <ul>
+                    <li>Toàn bộ mã nguồn
+<code>MyNFT.sol</code> (đã nâng cấp) và dự án React (dưới dạng file zip hoặc link Github).</li>
+                    <li>Địa chỉ hợp đồng đã triển khai trên Sepolia.</li>
+                    <li>Link đến bộ sưu tập của SV trên Rarible (testnet).</li>
+                    <li>Mô tả chi tiết logic và các đoạn code SV đã thêm/sửa để hoàn thành các bài tập nâng cao.</li>
+                    <li>Chụp ảnh màn hình DApp của SV đang hoạt động với các tính năng mới.</li>
+                </ul>
+            </li>
+        </ol>
+
+    </div>
+
+</body>
+</html>
+</DOCUMENT>
