@@ -1,0 +1,7 @@
+Bài thực hành số 4.2: TCP Attacks Lab
+
+- Task: https://seedsecuritylabs.org/Labs_20.04/Files/TCP_Attacks/TCP_Attacks.pdf
+- Máy ảo: Google Drive (https://drive.google.com/file/d/138fqx0F8bThLm9ka8cnuxmrD6irtz_4m/view) hoặc DigitalOcean (https://seed.nyc3.cdn.digitaloceanspaces.com/SEED-Ubuntu20.04.zip)
+
+- Setup: Labsetup.zip (https://seedsecuritylabs.org/Labs_20.04/Files/TCP_Attacks/Labsetup.zip)
+- Hướng dẫn sử dụng Docker: https://github.com/seed-labs/seed-labs/blob/master/manuals/docker/SEEDManual-Container.md
