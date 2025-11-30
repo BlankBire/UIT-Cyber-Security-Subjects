@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 6: Security Automation & CI/CD (Nâng cao)</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; padding: 2em; max-width: 900px; margin: auto; color: #333; background-color: #f9f9f9; }
+        h1, h2, h3, h4 { color: #1a1a1a; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        h1 { text-align: center; color: #0056b3; border: none; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        pre { background-color: #2d2d2d; color: #f8f8f2; padding: 1em; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; border: 1px solid #444; overflow-x: auto; }
+        code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; color: #ff79c6; }
+        .task-box { border: 1px solid #cfe2ff; background-color: #e7f1ff; padding: 15px; border-radius: 5px; margin-top: 20px; margin-bottom: 20px; }
+        .warning-box { border: 1px solid #fff3cd; background-color: #fff3cd; padding: 15px; border-radius: 5px; margin-top: 10px; color: #856404; }
+        .challenge-level { display: inline-block; padding: 3px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 0.8em; margin-left: 10px; }
+        .level-easy { background-color: #28a745; }
+        .level-medium { background-color: #ffc107; color: #333; }
+        .level-hard { background-color: #dc3545; }
+        .level-expert { background-color: #6f42c1; }
+        details { margin-top: 10px; border: 1px dashed #aaa; padding: 10px; border-radius: 5px; background-color: #fff; }
+        summary { font-weight: bold; cursor: pointer; color: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>BÀI THỰC HÀNH 6: SECURITY AUTOMATION (NÂNG CAO)</h1>
+    <p><strong>Môn học:</strong> NT547 - Blockchain Nền tảng, ứng dụng và bảo mật</p>
+    <p><strong>Mục tiêu:</strong> Không chỉ biết chạy Slither, sinh viên phải biết cách đọc báo cáo, lọc lỗi giả (False Positives), sửa code chuẩn bảo mật và tích hợp vào quy trình CI/CD.</p>
+
+    <div class="warning-box">
+        <strong>Lưu ý môi trường:</strong> Bài lab này yêu cầu cài đặt Python và Slither trên máy cục bộ (Localhost) hoặc sử dụng Google Colab/Github Codespaces nếu máy yếu. Remix IDE không hỗ trợ chạy trực tiếp Slither CLI đầy đủ.
+    </div>
+
+    <!-- PHẦN 1: AUDIT -->
+    <h2>Phần 1: Audit & Fix Code (Cơ bản) <span class="challenge-level level-easy">Dễ</span></h2>
+    
+    <div class="task-box">
+        <h4>Yêu cầu 1: Quét lỗi Hợp đồng "Rác"</h4>
+        <p>Tạo file <code>BadVault.sol</code> chứa hàng loạt lỗi cơ bản dưới đây.</p>
+        
+        <details>
+            <summary>Xem Code BadVault.sol</summary>
+<pre><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract BadVault {
+    mapping(address => uint) public balances;
+    address public owner;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function deposit() public payable {
+        balances[tx.origin] += msg.value; // Lỗi: Sử dụng tx.origin
+    }
+
+    function withdraw() public {
+        uint amount = balances[msg.sender];
+        (bool success, ) = msg.sender.call{value: amount}(""); // Lỗi: Unchecked return value (nếu version cũ) & Reentrancy
+        balances[msg.sender] = 0; // Lỗi: CEI pattern vi phạm
+    }
+    
+    function suicide() public {
+        selfdestruct(payable(owner)); // Lỗi: Dangerous & Deprecated
+    }
+    
+    function getBalance() public view returns (uint) {
+        return address(this).balance;
+    }
+}</code></pre>
+        </details>
+
+        <p><strong>Nhiệm vụ:</strong></p>
+        <ol>
+            <li>Cài đặt Slither: <code>pip3 install slither-analyzer</code></li>
+            <li>Chạy lệnh quét: <code>slither BadVault.sol</code></li>
+            <li><strong>Báo cáo:</strong> 
+                <ul>
+                    <li>Chụp màn hình Terminal hiển thị danh sách các lỗi (Đỏ/Vàng/Xanh).</li>
+                    <li>Liệt kê ít nhất <strong>3 loại lỗi</strong> khác nhau mà Slither tìm thấy (ví dụ: <code>reentrancy-eth</code>, <code>tx-origin</code>, v.v.).</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <div class="task-box">
+        <h4>Yêu cầu 2: Fix lỗi & Rescan</h4>
+        <ol>
+            <li>Dựa trên báo cáo Slither, hãy viết lại contract thành <code>GoodVault.sol</code> để khắc phục TẤT CẢ các lỗi mức High và Medium.</li>
+            <li>Chạy lại lệnh: <code>slither GoodVault.sol</code></li>
+            <li><strong>Báo cáo:</strong>
+                <ul>
+                    <li>Source code <code>GoodVault.sol</code>.</li>
+                    <li>Ảnh chụp màn hình kết quả Slither hiển thị "No vulnerabilities found" (hoặc chỉ còn lỗi Low/Info chấp nhận được).</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <!-- PHẦN 2: TRIAGE & CONFIG -->
+    <h2>Phần 2: Cấu hình nâng cao & Lọc nhiễu <span class="challenge-level level-medium">Trung bình</span></h2>
+    
+    <p>Trong dự án thực tế, Slither sẽ báo rất nhiều lỗi "rác" (False Positives) hoặc những lỗi ta chấp nhận sống chung. Sinh viên cần biết cách cấu hình để bỏ qua chúng.</p>
+
+    <div class="task-box">
+        <h4>Yêu cầu 3: Slither Config File</h4>
+        <ol>
+            <li>Tạo file cấu hình <code>slither.config.json</code>.</li>
+            <li>Cấu hình để Slither:
+                <ul>
+                    <li>Bỏ qua (Exclude) các lỗi mức độ <strong>Low</strong> và <strong>Informational</strong>.</li>
+                    <li>Bỏ qua detector tên là <code>solc-version</code> (vì ta thường lock version trong code rồi).</li>
+                </ul>
+            </li>
+            <li>Chạy lại lệnh trên <code>BadVault.sol</code> nhưng có áp dụng config.</li>
+            <li><strong>Báo cáo:</strong>
+                <ul>
+                    <li>Nội dung file <code>slither.config.json</code>.</li>
+                    <li>Ảnh chụp màn hình cho thấy số lượng lỗi báo ra đã ít hơn so với Yêu cầu 1.</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <!-- PHẦN 3: PRINTERS & VISUALIZATION -->
+    <h2>Phần 3: Trực quan hóa Hợp đồng (Printers) <span class="challenge-level level-hard">Khó</span></h2>
+    
+    <p>Slither không chỉ tìm lỗi, nó còn giúp Auditor hiểu code nhanh hơn thông qua các công cụ in ấn (Printers).</p>
+
+    <div class="task-box">
+        <h4>Yêu cầu 4: Vẽ biểu đồ luồng & Kế thừa</h4>
+        <p>Sử dụng một dự án mẫu phức tạp hơn (ví dụ: Contract ERC20 hoặc <code>MyNFT.sol</code> từ bài trước).</p>
+        <ol>
+            <li>Sử dụng Printer <code>human-summary</code> để in ra báo cáo tóm tắt chức năng dễ đọc.</li>
+            <li>Sử dụng Printer <code>inheritance-graph</code> để xuất ra file <code>.dot</code>.</li>
+            <li>Dùng công cụ online (như GraphvizOnline) để chuyển file <code>.dot</code> thành hình ảnh.</li>
+            <li><strong>Báo cáo:</strong>
+                <ul>
+                    <li>Ảnh chụp kết quả của <code>human-summary</code>.</li>
+                    <li>Hình ảnh cây kế thừa (Inheritance Graph) của hợp đồng.</li>
+                    <li>Giải thích ngắn gọn: Tại sao việc nhìn thấy cây kế thừa lại quan trọng khi Audit một dự án lớn?</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <!-- PHẦN 4: CI/CD INTEGRATION -->
+    <h2>Phần 4: Tự động hóa với GitHub Actions <span class="challenge-level level-expert">Nâng cao</span></h2>
+    
+    <p>DevSecOps là xu hướng bắt buộc. Code phải được quét tự động mỗi khi có Commit mới.</p>
+
+    <div class="task-box">
+        <h4>Yêu cầu 5 (Mô phỏng): Tạo Workflow CI/CD</h4>
+        <ol>
+            <li>Tạo một kho lưu trữ (Repo) trên GitHub chứa <code>BadVault.sol</code>.</li>
+            <li>Tạo file workflow: <code>.github/workflows/slither.yml</code>.</li>
+            <li>Cấu hình workflow này để tự động chạy Slither mỗi khi có hành động <code>push</code> vào nhánh main.</li>
+            <li>Cấu hình để workflow <strong>thất bại (fail)</strong> nếu tìm thấy lỗi High Severity.</li>
+            <li><strong>Báo cáo:</strong>
+                <ul>
+                    <li>Nội dung file <code>slither.yml</code>.</li>
+                    <li>Link đến GitHub Repo của bạn (hoặc ảnh chụp tab "Actions" trên GitHub hiển thị quá trình chạy Slither thành công/thất bại).</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <h2>Phần 5: Tổng kết</h2>
+    <div class="task-box">
+        <p>Sinh viên tổng hợp báo cáo PDF gồm:</p>
+        <ul>
+            <li>Thông tin cá nhân.</li>
+            <li>Minh chứng thực hiện cho từng yêu cầu (1-5).</li>
+            <li><strong>Câu hỏi tư duy:</strong> Tại sao Phân tích tĩnh (Static Analysis) như Slither lại nhanh hơn nhưng thường nhiều lỗi sai (false positive) hơn so với Fuzzing hay Formal Verification?</li>
+        </ul>
+    </div>
+
+</div>
+
+</body>
+</html>
