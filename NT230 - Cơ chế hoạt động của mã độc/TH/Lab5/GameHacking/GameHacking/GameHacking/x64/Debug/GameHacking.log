@@ -1,0 +1,8 @@
+﻿  Source.cpp
+D:\CyberSecurityUIT\NT230 - Cơ chế hoạt động của mã độc\TH\Lab5\GameHacking\GameHacking\GameHacking\Source.cpp(19,39): warning C4311: 'type cast': pointer truncation from 'BYTE *' to 'DWORD'
+D:\CyberSecurityUIT\NT230 - Cơ chế hoạt động của mã độc\TH\Lab5\GameHacking\GameHacking\GameHacking\Source.cpp(19,39): warning C4302: 'type cast': truncation from 'BYTE *' to 'DWORD'
+D:\CyberSecurityUIT\NT230 - Cơ chế hoạt động của mã độc\TH\Lab5\GameHacking\GameHacking\GameHacking\Source.cpp(61,38): warning C4312: 'type cast': conversion from 'unsigned long' to 'LPVOID' of greater size
+D:\CyberSecurityUIT\NT230 - Cơ chế hoạt động của mã độc\TH\Lab5\GameHacking\GameHacking\GameHacking\Source.cpp(67,42): warning C4312: 'type cast': conversion from 'unsigned long' to 'LPVOID' of greater size
+D:\CyberSecurityUIT\NT230 - Cơ chế hoạt động của mã độc\TH\Lab5\GameHacking\GameHacking\GameHacking\Source.cpp(74,38): warning C4312: 'type cast': conversion from 'DWORD' to 'LPVOID' of greater size
+D:\CyberSecurityUIT\NT230 - Cơ chế hoạt động của mã độc\TH\Lab5\GameHacking\GameHacking\GameHacking\Source.cpp(83,39): warning C4312: 'type cast': conversion from 'DWORD' to 'LPVOID' of greater size
+  GameHacking.vcxproj -> D:\CyberSecurityUIT\NT230 - Cơ chế hoạt động của mã độc\TH\Lab5\GameHacking\GameHacking\x64\Debug\GameHacking.exe
