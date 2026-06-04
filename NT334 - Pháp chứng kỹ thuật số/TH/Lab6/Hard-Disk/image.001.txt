@@ -1,0 +1,39 @@
+﻿Created By AccessData® FTK® Imager 4.7.1.2 
+
+Case Information: 
+Acquired using: ADI4.7.1.2
+Case Number:  
+Evidence Number:  
+Unique Description: 
+Examiner:  
+Notes:  
+
+--------------------------------------------------------------
+
+Information for C:\Users\votru\Desktop\Task3\image:
+
+Physical Evidentiary Item (Source) Information:
+[Device Info]
+ Source Type: Logical
+[Drive Geometry]
+ Bytes per Sector: 512
+ Sector Count: 1,024,000
+[Physical Drive Information]
+ Removable drive: True
+ Source data size: 500 MB
+ Sector count:    1024000
+[Computed Hashes]
+ MD5 checksum:    4c79bfd61e045642947e5b68f5e74f36
+ SHA1 checksum:   dd6fe4c34ed5d52485288f8baa16a19a6b426dc5
+
+Image Information:
+ Acquisition started:   Sun Sep 22 12:53:12 2024
+ Acquisition finished:  Sun Sep 22 12:53:28 2024
+ Segment list:
+  C:\Users\votru\Desktop\Task3\image.001
+
+Image Verification Results:
+ Verification started:  Sun Sep 22 12:53:28 2024
+ Verification finished: Sun Sep 22 12:53:30 2024
+ MD5 checksum:    4c79bfd61e045642947e5b68f5e74f36 : verified
+ SHA1 checksum:   dd6fe4c34ed5d52485288f8baa16a19a6b426dc5 : verified
